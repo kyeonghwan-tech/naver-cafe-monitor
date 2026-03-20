@@ -6,15 +6,13 @@ Naver Cafe 스크래퍼
 """
 
 import re
-import sqlite3
 import logging
-from datetime import datetime
 
 import requests
 from bs4 import BeautifulSoup
 
-from config import CAFE_ID, BOARDS, IT_KEYWORDS, NAVER_COOKIES, DATA_DIR, SEEN_POSTS_DB
-import os
+from config import CAFE_ID, BOARDS, IT_KEYWORDS, NAVER_COOKIES
+import db
 
 logger = logging.getLogger(__name__)
 
@@ -28,43 +26,16 @@ HEADERS = {
     "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8",
 }
 
-# ── DB 초기화 ─────────────────────────────────────────────────────
+# ── DB 위임 (db.py로 통합) ───────────────────────────────────────
 
 def init_db():
-    os.makedirs(DATA_DIR, exist_ok=True)
-    conn = sqlite3.connect(SEEN_POSTS_DB)
-    conn.execute(
-        """CREATE TABLE IF NOT EXISTS seen_posts (
-            cafe_id    TEXT NOT NULL,
-            article_id TEXT NOT NULL,
-            menu_id    TEXT NOT NULL,
-            title      TEXT,
-            seen_at    TEXT,
-            PRIMARY KEY (cafe_id, article_id)
-        )"""
-    )
-    conn.commit()
-    conn.close()
-
+    db.init_db()
 
 def is_seen(article_id: str) -> bool:
-    conn = sqlite3.connect(SEEN_POSTS_DB)
-    row = conn.execute(
-        "SELECT 1 FROM seen_posts WHERE cafe_id=? AND article_id=?",
-        (CAFE_ID, article_id),
-    ).fetchone()
-    conn.close()
-    return row is not None
-
+    return db.is_seen(article_id)
 
 def mark_seen(article_id: str, menu_id: str, title: str):
-    conn = sqlite3.connect(SEEN_POSTS_DB)
-    conn.execute(
-        "INSERT OR IGNORE INTO seen_posts VALUES (?,?,?,?,?)",
-        (CAFE_ID, article_id, menu_id, title, datetime.now().isoformat()),
-    )
-    conn.commit()
-    conn.close()
+    db.mark_seen(article_id, menu_id, title)
 
 
 # ── 세션 생성 ─────────────────────────────────────────────────────
@@ -254,5 +225,15 @@ def scan_all_boards() -> list[dict]:
 
             # 신규 게시글은 확인 여부와 무관하게 seen 처리
             mark_seen(article_id, menu_id, title)
+
+            # IT 키워드 매칭 게시글은 DB에 저장
+            if all_matched:
+                db.save_post({
+                    **article,
+                    "board_name": board_name,
+                    "keywords":   all_matched,
+                    "content":    content,
+                    "url":        article_url,
+                })
 
     return results

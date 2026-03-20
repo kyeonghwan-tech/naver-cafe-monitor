@@ -45,7 +45,7 @@ IT_KEYWORDS = [
 ]
 
 # ── 폴링 주기 (분) ───────────────────────────────────────────────
-POLL_INTERVAL_MINUTES = int(os.getenv("POLL_INTERVAL_MINUTES", "30"))
+POLL_INTERVAL_MINUTES = int(os.getenv("POLL_INTERVAL_MINUTES", "10"))
 
 # ── 데이터 저장 경로 ──────────────────────────────────────────────
 DATA_DIR      = os.path.join(os.path.dirname(__file__), "data")
