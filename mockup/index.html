@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IT 교육 모니터</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f2f5; color: #1a1a2e; min-height: 100vh; }
+
+    /* 사이드바 */
+    .sidebar { position: fixed; left:0; top:0; bottom:0; width:220px; background:#1a1a2e; display:flex; flex-direction:column; z-index:100; }
+    .sidebar-logo { padding:24px 20px; border-bottom:1px solid rgba(255,255,255,0.08); }
+    .brand { font-size:15px; font-weight:700; color:#fff; }
+    .brand span { display:block; font-size:11px; font-weight:400; color:rgba(255,255,255,0.4); margin-top:2px; }
+    .sidebar-nav { flex:1; padding:16px 0; }
+    .nav-label { font-size:10px; font-weight:600; color:rgba(255,255,255,0.3); text-transform:uppercase; letter-spacing:1px; padding:8px 20px 4px; }
+    .nav-item { display:flex; align-items:center; gap:10px; padding:10px 20px; cursor:pointer; color:rgba(255,255,255,0.55); font-size:14px; transition:all 0.15s; border-left:3px solid transparent; }
+    .nav-item:hover { background:rgba(255,255,255,0.05); color:#fff; }
+    .nav-item.active { background:rgba(99,102,241,0.15); color:#818cf8; border-left-color:#6366f1; }
+    .nav-item .icon { font-size:16px; width:20px; text-align:center; }
+    .nav-badge { margin-left:auto; background:#ef4444; color:#fff; font-size:10px; font-weight:700; padding:2px 6px; border-radius:10px; }
+    .sidebar-footer { padding:16px 20px; border-top:1px solid rgba(255,255,255,0.08); }
+    .status-indicator { display:flex; align-items:center; gap:8px; font-size:12px; color:rgba(255,255,255,0.5); }
+    .status-dot { width:8px; height:8px; border-radius:50%; background:#22c55e; box-shadow:0 0 6px #22c55e; animation:pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+    /* 메인 */
+    .main { margin-left:220px; min-height:100vh; }
+    .topbar { background:#fff; border-bottom:1px solid #e5e7eb; padding:0 28px; height:60px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:50; }
+    .topbar h1 { font-size:16px; font-weight:600; }
+    .topbar-right { display:flex; align-items:center; gap:10px; }
+    .last-scan { font-size:12px; color:#6b7280; }
+    .btn { padding:7px 14px; border-radius:8px; font-size:13px; font-weight:500; cursor:pointer; border:none; transition:all 0.15s; }
+    .btn-primary { background:#6366f1; color:#fff; }
+    .btn-primary:hover { background:#4f46e5; }
+    .btn-outline { background:transparent; color:#374151; border:1px solid #d1d5db; }
+    .btn-outline:hover { background:#f9fafb; }
+    .btn-sm { padding:5px 10px; font-size:12px; border-radius:6px; }
+    .btn-danger { background:#fef2f2; color:#ef4444; border:1px solid #fecaca; }
+
+    .content { padding:24px 28px; }
+
+    /* 통계 */
+    .stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:20px; }
+    .stat-card { background:#fff; border-radius:12px; padding:18px 20px; border:1px solid #e5e7eb; }
+    .stat-label { font-size:12px; color:#6b7280; margin-bottom:6px; }
+    .stat-value { font-size:26px; font-weight:700; color:#111; line-height:1; }
+    .stat-sub { font-size:11px; color:#6b7280; margin-top:5px; }
+    .stat-up { color:#22c55e; }
+    .stat-icon { float:right; font-size:20px; margin-top:-2px; }
+
+    /* 알림 배너 */
+    .alert-banner { background:#fef9c3; border:1px solid #fde047; border-radius:10px; padding:12px 16px; margin-bottom:20px; display:flex; align-items:center; justify-content:space-between; font-size:13px; color:#854d0e; }
+    .alert-banner strong { font-weight:600; }
+    .alert-banner .btn { background:#854d0e; color:#fff; border:none; }
+
+    /* 메인 그리드 */
+    .main-grid { display:grid; grid-template-columns:1fr 320px; gap:18px; }
+
+    /* 카드 */
+    .card { background:#fff; border-radius:12px; border:1px solid #e5e7eb; overflow:hidden; }
+    .card-header { padding:14px 20px; border-bottom:1px solid #f3f4f6; display:flex; align-items:center; justify-content:space-between; }
+    .card-title { font-size:14px; font-weight:600; }
+    .card-badge { background:#ede9fe; color:#6366f1; font-size:11px; font-weight:600; padding:2px 8px; border-radius:6px; }
+
+    /* 필터 */
+    .filter-row { display:flex; gap:6px; padding:10px 20px; border-bottom:1px solid #f3f4f6; flex-wrap:wrap; align-items:center; }
+    .filter-chip { padding:4px 12px; border-radius:20px; font-size:12px; cursor:pointer; border:1px solid #e5e7eb; color:#6b7280; background:#fff; transition:all 0.15s; }
+    .filter-chip.active { background:#6366f1; color:#fff; border-color:#6366f1; }
+    .filter-sep { flex:1; }
+    .sort-select { font-size:12px; color:#6b7280; border:1px solid #e5e7eb; border-radius:6px; padding:3px 8px; background:#fff; cursor:pointer; }
+
+    /* 게시글 아이템 - 핵심 개선 */
+    .post-item { padding:14px 20px; border-bottom:1px solid #f3f4f6; cursor:pointer; transition:background 0.1s; position:relative; }
+    .post-item:hover { background:#fafafa; }
+    .post-item.unread { border-left:3px solid #6366f1; }
+    .post-item.urgent { border-left:3px solid #ef4444; }
+    .post-item:last-child { border-bottom:none; }
+
+    .post-top { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:6px; gap:8px; }
+    .post-tags { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+
+    .board-tag { font-size:11px; font-weight:600; padding:2px 8px; border-radius:4px; }
+    .tag-훈련 { background:#dbeafe; color:#1d4ed8; }
+    .tag-기획 { background:#dcfce7; color:#15803d; }
+    .tag-추천 { background:#fef9c3; color:#854d0e; }
+    .tag-자유 { background:#f3e8ff; color:#7e22ce; }
+
+    /* ★ 핵심 개선: 상대 시간 + 긴급도 */
+    .time-badge { display:flex; align-items:center; gap:4px; font-size:11px; white-space:nowrap; }
+    .time-badge.fresh { color:#ef4444; font-weight:600; }
+    .time-badge.recent { color:#f97316; font-weight:500; }
+    .time-badge.old { color:#9ca3af; }
+
+    .post-title { font-size:14px; font-weight:600; color:#111; margin-bottom:5px; line-height:1.4; }
+    .post-preview { font-size:12px; color:#6b7280; line-height:1.5; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+
+    /* ★ 핵심 개선: 하단 액션바 */
+    .post-bottom { display:flex; align-items:center; justify-content:space-between; margin-top:10px; }
+    .keyword-tags { display:flex; gap:4px; flex-wrap:wrap; }
+    .keyword-tag { background:#ede9fe; color:#6366f1; font-size:10px; font-weight:600; padding:2px 6px; border-radius:4px; }
+
+    /* ★ 핵심 개선: 응대 상태 + 원문 버튼 */
+    .post-actions { display:flex; align-items:center; gap:6px; flex-shrink:0; }
+    .status-chip { font-size:11px; font-weight:600; padding:3px 8px; border-radius:6px; border:none; cursor:pointer; transition:all 0.15s; }
+    .status-pending { background:#fef2f2; color:#ef4444; }
+    .status-comment { background:#dcfce7; color:#15803d; }
+    .status-proposal { background:#dbeafe; color:#1d4ed8; }
+    .status-done { background:#f3f4f6; color:#6b7280; }
+    .btn-open { background:#6366f1; color:#fff; font-size:11px; font-weight:600; padding:4px 10px; border-radius:6px; border:none; cursor:pointer; display:flex; align-items:center; gap:4px; }
+    .btn-open:hover { background:#4f46e5; }
+
+    /* 우측 패널 */
+    .right-panel { display:flex; flex-direction:column; gap:14px; }
+
+    /* 응대 현황 (새로 추가) */
+    .progress-section { padding:16px 20px; }
+    .progress-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+    .progress-label { font-size:13px; color:#374151; font-weight:500; }
+    .progress-count { font-size:13px; font-weight:700; }
+    .progress-bar-wrap { height:6px; background:#f3f4f6; border-radius:3px; margin-bottom:14px; overflow:hidden; }
+    .progress-bar { height:100%; border-radius:3px; background: linear-gradient(90deg, #6366f1, #8b5cf6); }
+    .response-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+    .response-stat { background:#f9fafb; border-radius:8px; padding:10px; text-align:center; border:1px solid #e5e7eb; }
+    .response-stat .rs-value { font-size:18px; font-weight:700; color:#111; }
+    .response-stat .rs-label { font-size:10px; color:#6b7280; margin-top:2px; }
+    .rs-pending .rs-value { color:#ef4444; }
+    .rs-comment .rs-value { color:#22c55e; }
+    .rs-proposal .rs-value { color:#3b82f6; }
+
+    /* 게시판 현황 */
+    .board-row { display:flex; align-items:center; gap:10px; padding:10px 20px; border-bottom:1px solid #f3f4f6; font-size:13px; }
+    .board-row:last-child { border-bottom:none; }
+    .board-dot { width:8px; height:8px; border-radius:50%; background:#22c55e; flex-shrink:0; }
+    .board-name { color:#374151; font-weight:500; flex:1; }
+    .board-count { font-size:12px; color:#6366f1; font-weight:600; }
+
+    /* 알림설정 */
+    .setting-row { display:flex; align-items:center; justify-content:space-between; padding:11px 20px; border-bottom:1px solid #f3f4f6; font-size:13px; }
+    .setting-row:last-child { border-bottom:none; }
+    .setting-label { color:#374151; }
+    .setting-value { font-size:12px; color:#6b7280; }
+    .toggle { width:36px; height:20px; background:#6366f1; border-radius:10px; position:relative; cursor:pointer; }
+    .toggle.off { background:#d1d5db; }
+    .toggle::after { content:''; position:absolute; right:3px; top:3px; width:14px; height:14px; background:#fff; border-radius:50%; }
+    .toggle.off::after { right:auto; left:3px; }
+    .badge-warn { background:#fef2f2; color:#ef4444; font-size:10px; font-weight:700; padding:2px 6px; border-radius:4px; }
+    .badge-ok { background:#dcfce7; color:#15803d; font-size:10px; font-weight:700; padding:2px 6px; border-radius:4px; }
+
+    /* 타임라인 */
+    .timeline { padding:14px 20px; }
+    .tl-item { display:flex; gap:10px; padding-bottom:14px; position:relative; }
+    .tl-item:not(:last-child)::before { content:''; position:absolute; left:11px; top:24px; bottom:0; width:1px; background:#e5e7eb; }
+    .tl-dot { width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; flex-shrink:0; }
+    .tl-dot.scan { background:#ede9fe; border:2px solid #6366f1; }
+    .tl-dot.email { background:#dbeafe; border:2px solid #3b82f6; }
+    .tl-dot.warn { background:#fef9c3; border:2px solid #eab308; }
+    .tl-content { flex:1; }
+    .tl-title { font-size:12px; font-weight:600; color:#111; margin-bottom:1px; }
+    .tl-desc { font-size:11px; color:#6b7280; }
+    .tl-time { font-size:10px; color:#9ca3af; margin-top:2px; }
+
+    /* 모달 */
+    .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:200; display:none; align-items:center; justify-content:center; }
+    .modal-overlay.open { display:flex; }
+    .modal { background:#fff; border-radius:16px; width:640px; max-height:80vh; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 20px 60px rgba(0,0,0,0.2); }
+    .modal-header { padding:20px 24px; border-bottom:1px solid #e5e7eb; display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+    .modal-header h2 { font-size:16px; font-weight:700; color:#111; line-height:1.4; }
+    .modal-close { background:none; border:none; font-size:20px; cursor:pointer; color:#6b7280; flex-shrink:0; padding:0; line-height:1; }
+    .modal-meta { padding:12px 24px; background:#f9fafb; border-bottom:1px solid #e5e7eb; display:flex; gap:16px; flex-wrap:wrap; }
+    .meta-item { font-size:12px; color:#6b7280; }
+    .meta-item strong { color:#374151; }
+    .modal-body { padding:20px 24px; overflow-y:auto; flex:1; }
+    .modal-body p { font-size:13px; color:#374151; line-height:1.8; }
+    .modal-footer { padding:16px 24px; border-top:1px solid #e5e7eb; display:flex; align-items:center; justify-content:space-between; gap:8px; }
+    .modal-status-group { display:flex; gap:6px; }
+    .btn-open-large { background:#6366f1; color:#fff; padding:9px 18px; border-radius:8px; font-size:13px; font-weight:600; border:none; cursor:pointer; display:flex; align-items:center; gap:6px; }
+    .btn-open-large:hover { background:#4f46e5; }
+  </style>
+</head>
+<body>
+
+<!-- 사이드바 -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="brand">IT 교육 모니터<span>네이버 카페 자동 탐지</span></div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-label">메뉴</div>
+    <div class="nav-item active"><span class="icon">📊</span> 대시보드 <span class="nav-badge">3</span></div>
+    <div class="nav-item"><span class="icon">📋</span> 전체 게시글</div>
+    <div class="nav-item"><span class="icon">📈</span> 응대 현황</div>
+    <div class="nav-label" style="margin-top:12px">관리</div>
+    <div class="nav-item"><span class="icon">🔑</span> 키워드 관리</div>
+    <div class="nav-item"><span class="icon">📡</span> 게시판 관리</div>
+    <div class="nav-item"><span class="icon">⚙️</span> 설정</div>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="status-indicator"><div class="status-dot"></div>모니터링 실행 중</div>
+    <div style="margin-top:5px;font-size:11px;color:rgba(255,255,255,0.3)">다음 스캔: 6분 후</div>
+  </div>
+</aside>
+
+<!-- 메인 -->
+<div class="main">
+  <div class="topbar">
+    <h1>대시보드</h1>
+    <div class="topbar-right">
+      <span class="last-scan">마지막 스캔: 방금 전</span>
+      <button class="btn btn-outline">지금 스캔</button>
+      <button class="btn btn-primary">+ 키워드 추가</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+
+    <!-- 통계 -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">오늘 탐지 게시글</div>
+        <div class="stat-value" style="color:#6366f1">24 <span class="stat-icon">📨</span></div>
+        <div class="stat-sub stat-up">▲ 어제보다 8건 많음</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">미응대 게시글</div>
+        <div class="stat-value" style="color:#ef4444">3 <span class="stat-icon">🔥</span></div>
+        <div class="stat-sub" style="color:#ef4444">즉시 응대 필요</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">탐지 주기</div>
+        <div class="stat-value" style="font-size:20px;padding-top:4px">10분</div>
+        <div class="stat-sub" style="color:#22c55e">● 정상 운영 중</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">이번달 누적</div>
+        <div class="stat-value">142</div>
+        <div class="stat-sub">3월 1일 ~ 현재</div>
+      </div>
+
+    </div>
+
+    <!-- 메인 그리드 -->
+    <div class="main-grid">
+
+      <!-- 게시글 목록 -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">탐지된 게시글</span>
+          <span class="card-badge">오늘 24건</span>
+        </div>
+        <div class="filter-row">
+          <div class="filter-chip active">전체</div>
+          <div class="filter-chip">교육훈련</div>
+          <div class="filter-chip">교육기획</div>
+          <div class="filter-chip">강사추천</div>
+          <div class="filter-chip">자유게시판</div>
+          <div class="filter-chip" style="background:#fef2f2;color:#ef4444;border-color:#fecaca">🔥 미응대</div>
+          <div class="filter-sep"></div>
+          <select class="sort-select"><option>최신순</option><option>긴급순</option><option>게시판순</option></select>
+        </div>
+
+        <!-- 게시글 1: 긴급 (방금 올라온) -->
+        <div class="post-item urgent" onclick="openModal()">
+          <div class="post-top">
+            <div class="post-tags">
+              <span class="board-tag tag-기획">교육기획</span>
+              <span style="background:#fef2f2;color:#ef4444;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px">🔥 NEW</span>
+            </div>
+            <span class="time-badge fresh">🕐 3분 전</span>
+          </div>
+          <div class="post-title">제조업 AI 교육 기획 — 직원 200명 대상 견적 요청</div>
+          <div class="post-preview">안녕하세요. 제조업 생산직 및 사무직 직원 200명을 대상으로 AI 활용 교육을 기획하고 있습니다. 커리큘럼 구성과 비용 견적을 받아보고 싶어서요...</div>
+          <div class="post-bottom">
+            <div class="keyword-tags">
+              <span class="keyword-tag">AI</span>
+              <span class="keyword-tag">교육기획</span>
+            </div>
+            <div class="post-actions">
+              <button class="status-chip status-pending" onclick="event.stopPropagation()">미응대</button>
+              <button class="btn-open" onclick="event.stopPropagation()">원문 열기 ↗</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 게시글 2: 긴급 -->
+        <div class="post-item urgent">
+          <div class="post-top">
+            <div class="post-tags">
+              <span class="board-tag tag-훈련">교육훈련</span>
+              <span style="background:#fef2f2;color:#ef4444;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px">🔥 NEW</span>
+            </div>
+            <span class="time-badge fresh">🕐 8분 전</span>
+          </div>
+          <div class="post-title">[기업교육] 생성형 AI(ChatGPT) 업무 활용 교육 추천 요청의 건</div>
+          <div class="post-preview">임직원 50명 대상으로 ChatGPT 실무 활용 교육을 찾고 있습니다. 반나절 과정으로 진행 가능한 강사분 추천 부탁드립니다...</div>
+          <div class="post-bottom">
+            <div class="keyword-tags">
+              <span class="keyword-tag">AI</span>
+              <span class="keyword-tag">ChatGPT</span>
+              <span class="keyword-tag">생성형 AI</span>
+            </div>
+            <div class="post-actions">
+              <button class="status-chip status-pending">미응대</button>
+              <button class="btn-open">원문 열기 ↗</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 게시글 3: 댓글 완료 -->
+        <div class="post-item">
+          <div class="post-top">
+            <div class="post-tags">
+              <span class="board-tag tag-추천">강사추천</span>
+            </div>
+            <span class="time-badge recent">🕐 34분 전</span>
+          </div>
+          <div class="post-title">AI 교육 강사를 추천해 주세요 (공공기관 경험자)</div>
+          <div class="post-preview">공기업 전 직원 대상으로 AI 리터러시 교육을 진행하려 합니다. 공공기관 경험 있으신 강사 추천 부탁드립니다...</div>
+          <div class="post-bottom">
+            <div class="keyword-tags">
+              <span class="keyword-tag">AI</span>
+              <span class="keyword-tag">인공지능</span>
+            </div>
+            <div class="post-actions">
+              <button class="status-chip status-comment">💬 댓글 완료</button>
+              <button class="btn-open">원문 열기 ↗</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 게시글 4: 제안서 발송 -->
+        <div class="post-item">
+          <div class="post-top">
+            <div class="post-tags">
+              <span class="board-tag tag-기획">교육기획</span>
+            </div>
+            <span class="time-badge recent">🕐 51분 전</span>
+          </div>
+          <div class="post-title">AI Tool 활용이나 자동화 등 HRD 담당자 교육 추천</div>
+          <div class="post-preview">HRD 담당자로서 업무에 AI를 도입하고 싶은데 어떤 교육부터 들으면 좋을지 추천해주세요. RPA나 자동화 관련 교육도 궁금합니다...</div>
+          <div class="post-bottom">
+            <div class="keyword-tags">
+              <span class="keyword-tag">AI</span>
+              <span class="keyword-tag">자동화</span>
+              <span class="keyword-tag">RPA</span>
+            </div>
+            <div class="post-actions">
+              <button class="status-chip status-proposal">📄 제안서 발송</button>
+              <button class="btn-open">원문 열기 ↗</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 게시글 5 -->
+        <div class="post-item">
+          <div class="post-top">
+            <div class="post-tags">
+              <span class="board-tag tag-훈련">교육훈련</span>
+            </div>
+            <span class="time-badge old">🕐 1시간 23분 전</span>
+          </div>
+          <div class="post-title">SK AX 생성형AI 활용 자격증 국내 첫 정부공인 안내</div>
+          <div class="post-preview">채용과 육성/인증용으로 대외 서비스 중인 생성형AI 자격증 관련 정보 공유드립니다. 기업 교육 연계도 가능합니다...</div>
+          <div class="post-bottom">
+            <div class="keyword-tags">
+              <span class="keyword-tag">생성형 AI</span>
+              <span class="keyword-tag">AI</span>
+            </div>
+            <div class="post-actions">
+              <button class="status-chip status-done">완료</button>
+              <button class="btn-open">원문 열기 ↗</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 우측 패널 -->
+      <div class="right-panel">
+
+        <!-- ★ 핵심 개선: 응대 현황 -->
+        <div class="card">
+          <div class="card-header"><span class="card-title">오늘 응대 현황</span></div>
+          <div class="progress-section">
+            <div class="progress-row">
+              <span class="progress-label">응대 완료율</span>
+              <span class="progress-count" style="color:#6366f1">87.5%</span>
+            </div>
+            <div class="progress-bar-wrap"><div class="progress-bar" style="width:87.5%"></div></div>
+            <div class="response-stats">
+              <div class="response-stat rs-pending">
+                <div class="rs-value">3</div>
+                <div class="rs-label">🔥 미응대</div>
+              </div>
+              <div class="response-stat rs-comment">
+                <div class="rs-value">12</div>
+                <div class="rs-label">💬 댓글</div>
+              </div>
+              <div class="response-stat rs-proposal">
+                <div class="rs-value">9</div>
+                <div class="rs-label">📄 제안서</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 게시판 모니터링 현황 -->
+        <div class="card">
+          <div class="card-header"><span class="card-title">게시판 모니터링</span></div>
+          <div class="board-row"><div class="board-dot"></div><span class="board-name">교육훈련</span><span class="board-count">9건</span></div>
+          <div class="board-row"><div class="board-dot"></div><span class="board-name">교육기획</span><span class="board-count">10건</span></div>
+          <div class="board-row"><div class="board-dot"></div><span class="board-name">강사추천</span><span class="board-count">4건</span></div>
+          <div class="board-row"><div class="board-dot"></div><span class="board-name">자유게시판</span><span class="board-count">1건</span></div>
+        </div>
+
+        <!-- 시스템 설정 -->
+        <div class="card">
+          <div class="card-header"><span class="card-title">시스템 설정</span></div>
+          <div class="setting-row">
+            <span class="setting-label">탐지 주기</span>
+            <span class="badge-ok">10분 ✓</span>
+          </div>
+          <div class="setting-row">
+            <span class="setting-label">모니터링</span>
+            <div class="toggle"></div>
+          </div>
+          <div class="setting-row">
+            <span class="setting-label">GitHub 저장</span>
+            <div class="toggle"></div>
+          </div>
+          <div class="setting-row">
+            <span class="setting-label">PC 자동 시작</span>
+            <span class="badge-ok">등록됨 ✓</span>
+          </div>
+        </div>
+
+        <!-- 타임라인 -->
+        <div class="card">
+          <div class="card-header"><span class="card-title">최근 활동</span></div>
+          <div class="timeline">
+            <div class="tl-item">
+              <div class="tl-dot scan">📡</div>
+              <div class="tl-content">
+                <div class="tl-title">스캔 완료 — 신규 2건</div>
+                <div class="tl-desc">교육기획, 교육훈련 게시판</div>
+                <div class="tl-time">방금 전</div>
+              </div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-dot scan">📡</div>
+              <div class="tl-content">
+                <div class="tl-title">스캔 완료 — 신규 없음</div>
+                <div class="tl-desc">4개 게시판 정상 확인</div>
+                <div class="tl-time">10분 전</div>
+              </div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-dot email">📄</div>
+              <div class="tl-content">
+                <div class="tl-title">GitHub 업로드</div>
+                <div class="tl-desc">24개 파일 저장 완료</div>
+                <div class="tl-time">34분 전</div>
+              </div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-dot scan">📡</div>
+              <div class="tl-content">
+                <div class="tl-title">스캔 완료 — 신규 1건</div>
+                <div class="tl-desc">강사추천 게시판</div>
+                <div class="tl-time">44분 전</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ★ 핵심 개선: 게시글 상세 모달 -->
+<div class="modal-overlay" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>제조업 AI 교육 기획 — 직원 200명 대상 견적 요청</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-meta">
+      <span class="meta-item"><strong>게시판</strong> 교육기획</span>
+      <span class="meta-item"><strong>작성자</strong> 김**담당자</span>
+      <span class="meta-item"><strong>탐지</strong> 3분 전</span>
+      <span class="meta-item"><strong>키워드</strong> AI, 교육기획</span>
+    </div>
+    <div class="modal-body">
+      <p>안녕하세요.<br><br>
+      저는 제조업 HR 담당자입니다. 생산직 및 사무직 직원 200명을 대상으로 AI 활용 교육을 기획하고 있습니다.<br><br>
+      교육 대상자의 IT 역량이 다소 낮은 편이라, 기초부터 실무 활용까지 단계적으로 진행할 수 있는 커리큘럼을 원합니다.<br><br>
+      아래 내용으로 제안서 및 견적을 받고 싶습니다:<br>
+      - 교육 대상: 생산직 100명 / 사무직 100명 (분리 진행)<br>
+      - 희망 일정: 2026년 4월 중<br>
+      - 교육 방식: 집체교육 (집합 교육장 보유)<br>
+      - 예산: 미정 (견적 확인 후 결정)<br><br>
+      관심 있으신 강사분이나 교육 업체분들의 연락 기다리겠습니다.<br>
+      이메일: example@company.co.kr</p>
+    </div>
+    <div class="modal-footer">
+      <div class="modal-status-group">
+        <button class="status-chip status-pending btn" style="font-size:12px">🔥 미응대</button>
+        <button class="status-chip status-comment btn" style="font-size:12px">💬 댓글 완료</button>
+        <button class="status-chip status-proposal btn" style="font-size:12px">📄 제안서 발송</button>
+      </div>
+      <button class="btn-open-large">네이버 원문 열기 ↗</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  function openModal() { document.getElementById('modal').classList.add('open'); }
+  function closeModal() { document.getElementById('modal').classList.remove('open'); }
+
+  // 필터 칩 토글
+  document.querySelectorAll('.filter-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+    });
+  });
+
+  // 사이드바 nav 토글
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', () => {
+      document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+      item.classList.add('active');
+    });
+  });
+</script>
+</body>
+</html>
