@@ -2,8 +2,8 @@
   "version": 2,
   "builds": [
     {
-      "src": "api/*.py",
-      "use": "@vercel/python"
+      "src": "api/posts.js",
+      "use": "@vercel/node"
     },
     {
       "src": "web/index.html",
@@ -12,8 +12,8 @@
   ],
   "routes": [
     {
-      "src": "/api/(.*)",
-      "dest": "/api/$1.py"
+      "src": "/api/posts",
+      "dest": "/api/posts.js"
     },
     {
       "src": "/(.*)",
