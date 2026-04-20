@@ -1,15 +1,10 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "api/posts.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "web/index.html",
-      "use": "@vercel/static"
+  "functions": {
+    "api/posts.js": {
+      "runtime": "nodejs20.x"
     }
-  ],
+  },
   "routes": [
     {
       "src": "/api/posts",
