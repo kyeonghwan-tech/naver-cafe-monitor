@@ -1,224 +1,319 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>IT 교육 모니터</title>
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f5;color:#1a1a2e;min-height:100vh}
-.sidebar{position:fixed;left:0;top:0;bottom:0;width:220px;background:#1a1a2e;display:flex;flex-direction:column;z-index:100}
-.sidebar-logo{padding:22px 20px;border-bottom:1px solid rgba(255,255,255,.08)}
-.brand{font-size:15px;font-weight:700;color:#fff}
-.brand span{display:block;font-size:11px;font-weight:400;color:rgba(255,255,255,.4);margin-top:2px}
-.sidebar-nav{flex:1;padding:14px 0;overflow-y:auto}
-.nav-label{font-size:10px;font-weight:600;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:1px;padding:8px 20px 4px}
-.nav-item{display:flex;align-items:center;gap:10px;padding:10px 20px;cursor:pointer;color:rgba(255,255,255,.55);font-size:13px;transition:.15s;border-left:3px solid transparent}
-.nav-item:hover{background:rgba(255,255,255,.05);color:#fff}
-.nav-item.active{background:rgba(99,102,241,.15);color:#818cf8;border-left-color:#6366f1}
-.nav-item .icon{font-size:15px;width:20px;text-align:center}
-.nav-badge{margin-left:auto;background:#ef4444;color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:10px}
-.sidebar-footer{padding:14px 20px;border-top:1px solid rgba(255,255,255,.08)}
-.status-row{display:flex;align-items:center;gap:8px;font-size:12px;color:rgba(255,255,255,.5)}
-.status-dot{width:8px;height:8px;border-radius:50%;background:#22c55e;box-shadow:0 0 6px #22c55e;animation:pulse 2s infinite}
-.status-dot.loading{background:#f59e0b;box-shadow:0 0 6px #f59e0b}
-.status-dot.off{background:#6b7280;box-shadow:none;animation:none}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-.next-scan{margin-top:5px;font-size:11px;color:rgba(255,255,255,.3)}
-.main{margin-left:220px;min-height:100vh}
-.topbar{background:#fff;border-bottom:1px solid #e5e7eb;padding:0 24px;height:58px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
-.topbar h1{font-size:15px;font-weight:600}
-.topbar-right{display:flex;align-items:center;gap:10px}
-.last-scan-text{font-size:12px;color:#6b7280}
-.btn{padding:7px 14px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;border:none;transition:.15s}
-.btn-outline{background:#fff;color:#374151;border:1px solid #d1d5db}
-.btn-outline:hover{background:#f9fafb}
-.btn-sm{padding:4px 10px;font-size:12px;border-radius:6px}
-.content{padding:22px 24px}
-.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
-.stat-card{background:#fff;border-radius:12px;padding:18px 20px;border:1px solid #e5e7eb}
-.stat-label{font-size:12px;color:#6b7280;margin-bottom:6px}
-.stat-value{font-size:26px;font-weight:700;color:#111;line-height:1}
-.stat-sub{font-size:11px;color:#6b7280;margin-top:5px}
-.c-indigo{color:#6366f1}.c-red{color:#ef4444}.c-green{color:#22c55e}
-.main-grid{display:grid;grid-template-columns:1fr 310px;gap:16px}
-.card{background:#fff;border-radius:12px;border:1px solid #e5e7eb;overflow:hidden}
-.card-header{padding:14px 20px;border-bottom:1px solid #f3f4f6;display:flex;align-items:center;justify-content:space-between}
-.card-title{font-size:14px;font-weight:600}
-.card-badge{background:#ede9fe;color:#6366f1;font-size:11px;font-weight:600;padding:2px 8px;border-radius:6px}
-.filter-row{display:flex;gap:6px;padding:10px 20px;border-bottom:1px solid #f3f4f6;flex-wrap:wrap;align-items:center}
-.filter-chip{padding:4px 12px;border-radius:20px;font-size:12px;cursor:pointer;border:1px solid #e5e7eb;color:#6b7280;background:#fff;transition:.15s;user-select:none}
-.filter-chip:hover{border-color:#6366f1;color:#6366f1}
-.filter-chip.active{background:#6366f1;color:#fff;border-color:#6366f1}
-.filter-sep{flex:1}
-.post-item{padding:14px 20px;border-bottom:1px solid #f3f4f6;cursor:pointer;transition:background .1s}
-.post-item:hover{background:#fafafa}
-.post-item.unread{border-left:3px solid #6366f1;padding-left:17px}
-.post-item.urgent{border-left:3px solid #ef4444;padding-left:17px}
-.post-item:last-child{border-bottom:none}
-.post-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:6px;gap:8px}
-.post-tags{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
-.board-tag{font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px}
-.tag-교육훈련{background:#dbeafe;color:#1d4ed8}
-.tag-교육기획{background:#dcfce7;color:#15803d}
-.tag-강사추천{background:#fef9c3;color:#854d0e}
-.tag-자유게시판{background:#f3e8ff;color:#7e22ce}
-.time-badge{font-size:11px;white-space:nowrap;flex-shrink:0;color:#9ca3af}
-.post-title{font-size:13px;font-weight:600;color:#111;margin-bottom:5px;line-height:1.4}
-.post-bottom{display:flex;align-items:center;justify-content:space-between;margin-top:9px}
-.keyword-tags{display:flex;gap:4px;flex-wrap:wrap}
-.keyword-tag{background:#ede9fe;color:#6366f1;font-size:10px;font-weight:600;padding:2px 6px;border-radius:4px}
-.no-keyword-tag{background:#f3f4f6;color:#9ca3af;font-size:10px;padding:2px 6px;border-radius:4px}
-.post-actions{display:flex;align-items:center;gap:6px;flex-shrink:0}
-.btn-open{background:#6366f1;color:#fff;font-size:11px;font-weight:600;padding:4px 10px;border-radius:6px;border:none;cursor:pointer}
-.btn-open:hover{background:#4f46e5}
-.empty{text-align:center;padding:48px 20px;color:#9ca3af;font-size:13px}
-.empty .ei{font-size:36px;margin-bottom:10px}
-.right-panel{display:flex;flex-direction:column;gap:14px}
-.board-row{display:flex;align-items:center;gap:10px;padding:10px 20px;border-bottom:1px solid #f3f4f6;font-size:13px}
-.board-row:last-child{border-bottom:none}
-.board-dot{width:8px;height:8px;border-radius:50%;background:#22c55e;flex-shrink:0}
-.board-name{color:#374151;font-weight:500;flex:1}
-.board-cnt{font-size:12px;color:#6366f1;font-weight:600}
-.setting-row{display:flex;align-items:center;justify-content:space-between;padding:11px 20px;border-bottom:1px solid #f3f4f6;font-size:13px}
-.setting-row:last-child{border-bottom:none}
-.setting-label{color:#374151}
-.badge-ok{background:#dcfce7;color:#15803d;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px}
-.badge-warn{background:#fef9c3;color:#854d0e;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px}
-.timeline{padding:14px 20px}
-.tl-item{display:flex;gap:10px;padding-bottom:14px;position:relative}
-.tl-item:not(:last-child)::before{content:'';position:absolute;left:11px;top:24px;bottom:0;width:1px;background:#e5e7eb}
-.tl-dot{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;background:#dcfce7;border:2px solid #22c55e}
-.tl-content{flex:1}
-.tl-title{font-size:12px;font-weight:600;color:#111;margin-bottom:1px}
-.tl-desc{font-size:11px;color:#6b7280}
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;display:none;align-items:center;justify-content:center;padding:20px}
-.modal-overlay.open{display:flex}
-.modal{background:#fff;border-radius:16px;width:660px;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.2)}
-.modal-header{padding:20px 24px;border-bottom:1px solid #e5e7eb;display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
-.modal-header h2{font-size:16px;font-weight:700;color:#111;line-height:1.4}
-.modal-close{background:none;border:none;font-size:22px;cursor:pointer;color:#6b7280;flex-shrink:0;line-height:1;padding:0}
-.modal-meta{padding:12px 24px;background:#f9fafb;border-bottom:1px solid #e5e7eb;display:flex;gap:16px;flex-wrap:wrap}
-.meta-item{font-size:12px;color:#6b7280}
-.meta-item strong{color:#374151}
-.modal-body{padding:20px 24px;overflow-y:auto;flex:1;font-size:13px;color:#374151;line-height:1.8;white-space:pre-wrap;word-break:break-word}
-.modal-footer{padding:14px 24px;border-top:1px solid #e5e7eb;display:flex;align-items:center;justify-content:flex-end}
-.btn-open-naver{background:#03c75a;color:#fff;padding:9px 18px;border-radius:8px;font-size:13px;font-weight:600;border:none;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
-.btn-open-naver:hover{background:#02a84a}
-.spinner{display:inline-block;width:16px;height:16px;border:2px solid #e5e7eb;border-top-color:#6366f1;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:6px}
-@keyframes spin{to{transform:rotate(360deg)}}
-.error-banner{background:#fef2f2;border:1px solid #fca5a5;color:#b91c1c;padding:10px 16px;border-radius:8px;font-size:12px;margin:10px 20px;display:none}
-.error-banner.show{display:block}
-.cookie-notice{background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;padding:10px 14px;border-radius:8px;font-size:12px;line-height:1.6}
-.cookie-notice strong{display:block;margin-bottom:4px;font-size:13px}
-</style>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>IT 교육 모니터</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f5;color:#1a1a2e;min-height:100vh}
+
+    /* 사이드바 */
+    .sidebar{position:fixed;left:0;top:0;bottom:0;width:220px;background:#1a1a2e;display:flex;flex-direction:column;z-index:100}
+    .sidebar-logo{padding:22px 20px;border-bottom:1px solid rgba(255,255,255,.08)}
+    .brand{font-size:15px;font-weight:700;color:#fff}
+    .brand span{display:block;font-size:11px;font-weight:400;color:rgba(255,255,255,.4);margin-top:2px}
+    .sidebar-nav{flex:1;padding:14px 0;overflow-y:auto}
+    .nav-label{font-size:10px;font-weight:600;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:1px;padding:8px 20px 4px}
+    .nav-item{display:flex;align-items:center;gap:10px;padding:10px 20px;cursor:pointer;color:rgba(255,255,255,.55);font-size:13px;transition:.15s;border-left:3px solid transparent}
+    .nav-item:hover{background:rgba(255,255,255,.05);color:#fff}
+    .nav-item.active{background:rgba(99,102,241,.15);color:#818cf8;border-left-color:#6366f1}
+    .nav-item .icon{font-size:15px;width:20px;text-align:center}
+    .nav-badge{margin-left:auto;background:#ef4444;color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:10px}
+    .sidebar-footer{padding:14px 20px;border-top:1px solid rgba(255,255,255,.08)}
+    .status-row{display:flex;align-items:center;gap:8px;font-size:12px;color:rgba(255,255,255,.5)}
+    .status-dot{width:8px;height:8px;border-radius:50%;background:#22c55e;box-shadow:0 0 6px #22c55e;animation:pulse 2s infinite}
+    .status-dot.off{background:#6b7280;box-shadow:none;animation:none}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+    .next-scan{margin-top:5px;font-size:11px;color:rgba(255,255,255,.3)}
+
+    /* 메인 */
+    .main{margin-left:220px;min-height:100vh}
+    .topbar{background:#fff;border-bottom:1px solid #e5e7eb;padding:0 24px;height:58px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+    .topbar h1{font-size:15px;font-weight:600}
+    .topbar-right{display:flex;align-items:center;gap:10px}
+    .last-scan-text{font-size:12px;color:#6b7280}
+    .btn{padding:7px 14px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;border:none;transition:.15s}
+    .btn-primary{background:#6366f1;color:#fff}
+    .btn-primary:hover{background:#4f46e5}
+    .btn-outline{background:#fff;color:#374151;border:1px solid #d1d5db}
+    .btn-outline:hover{background:#f9fafb}
+    .btn-sm{padding:4px 10px;font-size:12px;border-radius:6px}
+
+    .content{padding:22px 24px}
+
+    /* 통계 */
+    .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
+    .stat-card{background:#fff;border-radius:12px;padding:18px 20px;border:1px solid #e5e7eb}
+    .stat-label{font-size:12px;color:#6b7280;margin-bottom:6px}
+    .stat-value{font-size:26px;font-weight:700;color:#111;line-height:1}
+    .stat-sub{font-size:11px;color:#6b7280;margin-top:5px}
+    .c-indigo{color:#6366f1} .c-red{color:#ef4444} .c-green{color:#22c55e}
+
+    /* 메인 그리드 */
+    .main-grid{display:grid;grid-template-columns:1fr 310px;gap:16px}
+
+    /* 카드 */
+    .card{background:#fff;border-radius:12px;border:1px solid #e5e7eb;overflow:hidden}
+    .card-header{padding:14px 20px;border-bottom:1px solid #f3f4f6;display:flex;align-items:center;justify-content:space-between}
+    .card-title{font-size:14px;font-weight:600}
+    .card-badge{background:#ede9fe;color:#6366f1;font-size:11px;font-weight:600;padding:2px 8px;border-radius:6px}
+
+    /* 필터 */
+    .filter-row{display:flex;gap:6px;padding:10px 20px;border-bottom:1px solid #f3f4f6;flex-wrap:wrap;align-items:center}
+    .filter-chip{padding:4px 12px;border-radius:20px;font-size:12px;cursor:pointer;border:1px solid #e5e7eb;color:#6b7280;background:#fff;transition:.15s;user-select:none}
+    .filter-chip:hover{border-color:#6366f1;color:#6366f1}
+    .filter-chip.active{background:#6366f1;color:#fff;border-color:#6366f1}
+    .filter-chip.urgent-chip.active{background:#ef4444;border-color:#ef4444}
+    .filter-sep{flex:1}
+    .sort-select{font-size:12px;color:#6b7280;border:1px solid #e5e7eb;border-radius:6px;padding:3px 8px;background:#fff;cursor:pointer}
+
+    /* 게시글 */
+    .post-item{padding:14px 20px;border-bottom:1px solid #f3f4f6;cursor:pointer;transition:background .1s;position:relative}
+    .post-item:hover{background:#fafafa}
+    .post-item.unread{border-left:3px solid #6366f1;padding-left:17px}
+    .post-item.urgent{border-left:3px solid #ef4444;padding-left:17px}
+    .post-item:last-child{border-bottom:none}
+
+    .post-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:6px;gap:8px}
+    .post-tags{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+    .board-tag{font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px}
+    .tag-교육훈련{background:#dbeafe;color:#1d4ed8}
+    .tag-교육기획{background:#dcfce7;color:#15803d}
+    .tag-강사추천{background:#fef9c3;color:#854d0e}
+    .tag-자유게시판{background:#f3e8ff;color:#7e22ce}
+
+    .time-badge{display:flex;align-items:center;gap:3px;font-size:11px;white-space:nowrap;flex-shrink:0}
+    .time-fresh{color:#ef4444;font-weight:600}
+    .time-recent{color:#f97316;font-weight:500}
+    .time-old{color:#9ca3af}
+
+    .post-title{font-size:13px;font-weight:600;color:#111;margin-bottom:5px;line-height:1.4}
+    .post-preview{font-size:12px;color:#6b7280;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+    .post-bottom{display:flex;align-items:center;justify-content:space-between;margin-top:9px}
+    .keyword-tags{display:flex;gap:4px;flex-wrap:wrap}
+    .keyword-tag{background:#ede9fe;color:#6366f1;font-size:10px;font-weight:600;padding:2px 6px;border-radius:4px}
+    .post-actions{display:flex;align-items:center;gap:6px;flex-shrink:0}
+
+    .status-btn{font-size:11px;font-weight:600;padding:3px 9px;border-radius:6px;border:none;cursor:pointer;transition:.15s}
+    .s-pending{background:#fef2f2;color:#ef4444}
+    .s-comment{background:#dcfce7;color:#15803d}
+    .s-proposal{background:#dbeafe;color:#1d4ed8}
+    .s-done{background:#f3f4f6;color:#6b7280}
+    .btn-open{background:#6366f1;color:#fff;font-size:11px;font-weight:600;padding:4px 10px;border-radius:6px;border:none;cursor:pointer}
+    .btn-open:hover{background:#4f46e5}
+
+    /* 빈 상태 */
+    .empty{text-align:center;padding:48px 20px;color:#9ca3af;font-size:13px}
+    .empty .ei{font-size:36px;margin-bottom:10px}
+
+    /* 우측 패널 */
+    .right-panel{display:flex;flex-direction:column;gap:14px}
+
+    /* 응대 현황 */
+    .progress-section{padding:16px 20px}
+    .prog-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+    .prog-label{font-size:13px;color:#374151;font-weight:500}
+    .prog-count{font-size:13px;font-weight:700;color:#6366f1}
+    .prog-bar-wrap{height:6px;background:#f3f4f6;border-radius:3px;margin-bottom:14px;overflow:hidden}
+    .prog-bar{height:100%;border-radius:3px;background:linear-gradient(90deg,#6366f1,#8b5cf6);transition:width .5s}
+    .resp-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+    .resp-stat{background:#f9fafb;border-radius:8px;padding:10px;text-align:center;border:1px solid #e5e7eb}
+    .rs-val{font-size:18px;font-weight:700;color:#111}
+    .rs-lbl{font-size:10px;color:#6b7280;margin-top:2px}
+    .rs-pending .rs-val{color:#ef4444}
+    .rs-comment .rs-val{color:#22c55e}
+    .rs-proposal .rs-val{color:#3b82f6}
+
+    /* 게시판 현황 */
+    .board-row{display:flex;align-items:center;gap:10px;padding:10px 20px;border-bottom:1px solid #f3f4f6;font-size:13px}
+    .board-row:last-child{border-bottom:none}
+    .board-dot{width:8px;height:8px;border-radius:50%;background:#22c55e;flex-shrink:0}
+    .board-name{color:#374151;font-weight:500;flex:1}
+    .board-cnt{font-size:12px;color:#6366f1;font-weight:600}
+
+    /* 시스템 설정 */
+    .setting-row{display:flex;align-items:center;justify-content:space-between;padding:11px 20px;border-bottom:1px solid #f3f4f6;font-size:13px}
+    .setting-row:last-child{border-bottom:none}
+    .setting-label{color:#374151}
+    .badge-ok{background:#dcfce7;color:#15803d;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px}
+
+    /* 타임라인 */
+    .timeline{padding:14px 20px}
+    .tl-item{display:flex;gap:10px;padding-bottom:14px;position:relative}
+    .tl-item:not(:last-child)::before{content:'';position:absolute;left:11px;top:24px;bottom:0;width:1px;background:#e5e7eb}
+    .tl-dot{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0}
+    .tl-scan{background:#ede9fe;border:2px solid #6366f1}
+    .tl-new{background:#dcfce7;border:2px solid #22c55e}
+    .tl-content{flex:1}
+    .tl-title{font-size:12px;font-weight:600;color:#111;margin-bottom:1px}
+    .tl-desc{font-size:11px;color:#6b7280}
+    .tl-time{font-size:10px;color:#9ca3af;margin-top:2px}
+
+    /* 모달 */
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;display:none;align-items:center;justify-content:center;padding:20px}
+    .modal-overlay.open{display:flex}
+    .modal{background:#fff;border-radius:16px;width:660px;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+    .modal-header{padding:20px 24px;border-bottom:1px solid #e5e7eb;display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+    .modal-header h2{font-size:16px;font-weight:700;color:#111;line-height:1.4}
+    .modal-close{background:none;border:none;font-size:22px;cursor:pointer;color:#6b7280;flex-shrink:0;line-height:1;padding:0}
+    .modal-meta{padding:12px 24px;background:#f9fafb;border-bottom:1px solid #e5e7eb;display:flex;gap:16px;flex-wrap:wrap}
+    .meta-item{font-size:12px;color:#6b7280}
+    .meta-item strong{color:#374151}
+    .modal-body{padding:20px 24px;overflow-y:auto;flex:1;font-size:13px;color:#374151;line-height:1.8;white-space:pre-wrap;word-break:break-word}
+    .modal-footer{padding:14px 24px;border-top:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+    .modal-status-group{display:flex;gap:6px;flex-wrap:wrap}
+    .modal-status-btn{font-size:12px;font-weight:600;padding:6px 12px;border-radius:8px;border:2px solid transparent;cursor:pointer;transition:.15s}
+    .modal-status-btn:hover{opacity:.8}
+    .modal-status-btn.active-status{border-color:#374151}
+    .btn-open-naver{background:#03c75a;color:#fff;padding:9px 18px;border-radius:8px;font-size:13px;font-weight:600;border:none;cursor:pointer;display:flex;align-items:center;gap:6px;text-decoration:none}
+    .btn-open-naver:hover{background:#02a84a}
+
+    /* 로딩 */
+    .spinner{display:inline-block;width:14px;height:14px;border:2px solid #e5e7eb;border-top-color:#6366f1;border-radius:50%;animation:spin .6s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+  </style>
 </head>
 <body>
+
+<!-- 사이드바 -->
 <aside class="sidebar">
   <div class="sidebar-logo">
     <div class="brand">IT 교육 모니터<span>네이버 카페 자동 탐지</span></div>
   </div>
   <nav class="sidebar-nav">
     <div class="nav-label">메뉴</div>
-    <div class="nav-item active" onclick="setFilter(null,event)">
+    <div class="nav-item active" onclick="setFilter(null,null)">
       <span class="icon">📊</span>대시보드
       <span class="nav-badge" id="pendingBadge" style="display:none">0</span>
     </div>
+    <div class="nav-item" onclick="setFilter(null,'pending')"><span class="icon">🔥</span>미응대 게시글</div>
+    <div class="nav-item" onclick="setFilter(null,'comment')"><span class="icon">💬</span>댓글 완료</div>
+    <div class="nav-item" onclick="setFilter(null,'proposal')"><span class="icon">📄</span>제안서 발송</div>
     <div class="nav-label" style="margin-top:10px">게시판</div>
-    <div class="nav-item" onclick="setFilter('530',event)"><span class="icon">📚</span>교육훈련</div>
-    <div class="nav-item" onclick="setFilter('14',event)"><span class="icon">📋</span>교육기획</div>
-    <div class="nav-item" onclick="setFilter('334',event)"><span class="icon">🎤</span>강사추천</div>
-    <div class="nav-item" onclick="setFilter('3',event)"><span class="icon">💬</span>자유게시판</div>
+    <div class="nav-item" onclick="setFilter('530',null)"><span class="icon">📚</span>교육훈련</div>
+    <div class="nav-item" onclick="setFilter('14',null)"><span class="icon">📋</span>교육기획</div>
+    <div class="nav-item" onclick="setFilter('334',null)"><span class="icon">🎤</span>강사추천</div>
+    <div class="nav-item" onclick="setFilter('3',null)"><span class="icon">💬</span>자유게시판</div>
   </nav>
   <div class="sidebar-footer">
-    <div class="status-row">
-      <div class="status-dot loading" id="statusDot"></div>
-      <span id="statusText">로딩 중...</span>
-    </div>
-    <div class="next-scan" id="nextScanText">네이버 카페 실시간 연동</div>
+    <div class="status-row"><div class="status-dot" id="statusDot"></div><span id="statusText">연결 중...</span></div>
+    <div class="next-scan" id="nextScanText"></div>
   </div>
 </aside>
+
+<!-- 메인 -->
 <div class="main">
   <div class="topbar">
-    <h1 id="topbarTitle">대시보드</h1>
+    <h1>대시보드</h1>
     <div class="topbar-right">
       <span class="last-scan-text" id="lastScanText">-</span>
       <button class="btn btn-outline btn-sm" onclick="loadAll()">🔄 새로고침</button>
     </div>
   </div>
+
   <div class="content">
+    <!-- 통계 -->
     <div class="stats-grid">
       <div class="stat-card">
-        <div class="stat-label">탐지된 게시글</div>
+        <div class="stat-label">오늘 탐지 게시글</div>
         <div class="stat-value c-indigo" id="statTotal">-</div>
-        <div class="stat-sub">IT 키워드 매칭</div>
+        <div class="stat-sub" id="statMonth">이번달 누적: -건</div>
       </div>
       <div class="stat-card">
-        <div class="stat-label">전체 게시판</div>
-        <div class="stat-value c-indigo">4</div>
-        <div class="stat-sub">모니터링 중</div>
+        <div class="stat-label">미응대 게시글</div>
+        <div class="stat-value c-red" id="statPending">-</div>
+        <div class="stat-sub c-red" id="statPendingSub">즉시 응대 필요</div>
       </div>
       <div class="stat-card">
-        <div class="stat-label">키워드 수</div>
-        <div class="stat-value" style="font-size:20px;padding-top:4px">42개</div>
-        <div class="stat-sub c-green">AI·교육·디지털 관련</div>
+        <div class="stat-label">응대 완료율</div>
+        <div class="stat-value c-green" id="statRate">-</div>
+        <div class="stat-sub">오늘 기준</div>
       </div>
       <div class="stat-card">
-        <div class="stat-label">탐지 상태</div>
-        <div class="stat-value" style="font-size:20px;padding-top:4px" id="statStatus">-</div>
-        <div class="stat-sub c-green" id="statStatusSub">실시간 스캔</div>
+        <div class="stat-label">탐지 주기</div>
+        <div class="stat-value" style="font-size:20px;padding-top:4px">10분</div>
+        <div class="stat-sub c-green">● 정상 운영 중</div>
       </div>
     </div>
+
+    <!-- 메인 그리드 -->
     <div class="main-grid">
+
+      <!-- 게시글 목록 -->
       <div class="card">
         <div class="card-header">
           <span class="card-title">탐지된 게시글</span>
           <span class="card-badge" id="listBadge">로딩 중...</span>
         </div>
-        <div class="error-banner" id="errorBanner"></div>
         <div class="filter-row">
           <div class="filter-chip active" onclick="boardFilter(this,null)">전체</div>
           <div class="filter-chip" onclick="boardFilter(this,'530')">교육훈련</div>
           <div class="filter-chip" onclick="boardFilter(this,'14')">교육기획</div>
           <div class="filter-chip" onclick="boardFilter(this,'334')">강사추천</div>
           <div class="filter-chip" onclick="boardFilter(this,'3')">자유게시판</div>
-          <div class="filter-chip keyword-chip" onclick="keywordFilter(this)">🔑 키워드만</div>
+          <div class="filter-chip urgent-chip" onclick="statusFilter(this,'pending')">🔥 미응대</div>
           <div class="filter-sep"></div>
+          <select class="sort-select" id="sortSelect" onchange="renderPosts()">
+            <option value="detected">최신순</option>
+            <option value="urgent">긴급순</option>
+          </select>
         </div>
-        <div id="postList"><div class="empty"><div class="ei">⏳</div><span class="spinner"></span>네이버 카페 스캔 중...</div></div>
+        <div id="postList"><div class="empty"><div class="ei">⏳</div>게시글을 불러오는 중...</div></div>
       </div>
+
+      <!-- 우측 패널 -->
       <div class="right-panel">
+
+        <!-- 응대 현황 -->
         <div class="card">
-          <div class="card-header"><span class="card-title">게시판별 현황</span></div>
-          <div class="board-row"><div class="board-dot"></div><span class="board-name">교육훈련</span><span class="board-cnt" id="b530">-</span></div>
-          <div class="board-row"><div class="board-dot"></div><span class="board-name">교육기획</span><span class="board-cnt" id="b14">-</span></div>
-          <div class="board-row"><div class="board-dot"></div><span class="board-name">강사추천</span><span class="board-cnt" id="b334">-</span></div>
-          <div class="board-row"><div class="board-dot"></div><span class="board-name">자유게시판</span><span class="board-cnt" id="b3">-</span></div>
-        </div>
-        <div class="card">
-          <div class="card-header"><span class="card-title">시스템 정보</span></div>
-          <div class="setting-row"><span class="setting-label">배포 환경</span><span class="badge-ok">Vercel ✓</span></div>
-          <div class="setting-row"><span class="setting-label">데이터 소스</span><span class="badge-ok">실시간 스크래핑</span></div>
-          <div class="setting-row"><span class="setting-label">네이버 연동</span><span id="naverStatus" class="badge-warn">확인 중...</span></div>
-          <div class="setting-row"><span class="setting-label">마지막 갱신</span><span id="sysLastScan" class="badge-ok">-</span></div>
-        </div>
-        <div class="card">
-          <div class="card-header"><span class="card-title">⚙️ 쿠키 만료 시 안내</span></div>
-          <div style="padding:14px 20px">
-            <div class="cookie-notice">
-              <strong>쿠키 만료 시 재설정 필요</strong>
-              Vercel 환경변수에서 NAVER_NID_AUT / NAVER_NID_SES를 새 쿠키값으로 교체하세요.
+          <div class="card-header"><span class="card-title">오늘 응대 현황</span></div>
+          <div class="progress-section">
+            <div class="prog-row">
+              <span class="prog-label">응대 완료율</span>
+              <span class="prog-count" id="progRate">0%</span>
+            </div>
+            <div class="prog-bar-wrap"><div class="prog-bar" id="progBar" style="width:0%"></div></div>
+            <div class="resp-stats">
+              <div class="resp-stat rs-pending"><div class="rs-val" id="rsPending">0</div><div class="rs-lbl">🔥 미응대</div></div>
+              <div class="resp-stat rs-comment"><div class="rs-val" id="rsComment">0</div><div class="rs-lbl">💬 댓글</div></div>
+              <div class="resp-stat rs-proposal"><div class="rs-val" id="rsProposal">0</div><div class="rs-lbl">📄 제안서</div></div>
             </div>
           </div>
         </div>
+
+        <!-- 게시판별 현황 -->
+        <div class="card">
+          <div class="card-header"><span class="card-title">게시판별 현황 (오늘)</span></div>
+          <div id="boardStats">
+            <div class="board-row"><div class="board-dot"></div><span class="board-name">교육훈련</span><span class="board-cnt" id="b530">-</span></div>
+            <div class="board-row"><div class="board-dot"></div><span class="board-name">교육기획</span><span class="board-cnt" id="b14">-</span></div>
+            <div class="board-row"><div class="board-dot"></div><span class="board-name">강사추천</span><span class="board-cnt" id="b334">-</span></div>
+            <div class="board-row"><div class="board-dot"></div><span class="board-name">자유게시판</span><span class="board-cnt" id="b3">-</span></div>
+          </div>
+        </div>
+
+        <!-- 시스템 설정 -->
+        <div class="card">
+          <div class="card-header"><span class="card-title">시스템 정보</span></div>
+          <div class="setting-row"><span class="setting-label">탐지 주기</span><span class="badge-ok">10분 ✓</span></div>
+          <div class="setting-row"><span class="setting-label">모니터링</span><span class="badge-ok" id="sysRunning">확인 중...</span></div>
+          <div class="setting-row"><span class="setting-label">PC 자동 시작</span><span class="badge-ok">등록됨 ✓</span></div>
+          <div class="setting-row"><span class="setting-label">GitHub 저장</span><span class="badge-ok">활성화 ✓</span></div>
+        </div>
+
+        <!-- 최근 활동 -->
         <div class="card">
           <div class="card-header"><span class="card-title">최근 탐지</span></div>
-          <div class="timeline" id="recentTimeline"><div class="empty" style="padding:16px"><span class="spinner"></span>로딩 중...</div></div>
+          <div class="timeline" id="recentTimeline"><div class="empty" style="padding:20px"><div class="spinner"></div></div></div>
         </div>
+
       </div>
     </div>
   </div>
 </div>
+
+<!-- 게시글 상세 모달 -->
 <div class="modal-overlay" id="modal" onclick="if(event.target===this)closeModal()">
   <div class="modal">
     <div class="modal-header">
@@ -228,83 +323,282 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="modal-meta" id="modalMeta"></div>
     <div class="modal-body" id="modalBody"></div>
     <div class="modal-footer">
+      <div class="modal-status-group" id="modalStatusGroup"></div>
       <a id="modalNaverLink" href="#" target="_blank" class="btn-open-naver">N 네이버 원문 열기 ↗</a>
     </div>
   </div>
 </div>
+
 <script>
-let allPosts=[],currentMenuId=null,keywordOnly=false,isLoading=false;
-function escHtml(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-function setFilter(menuId,e){currentMenuId=menuId;document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));e.currentTarget.classList.add('active');const names={null:'대시보드','530':'교육훈련','14':'교육기획','334':'강사추천','3':'자유게시판'};document.getElementById('topbarTitle').textContent=names[menuId]||'대시보드';renderPosts();}
-function boardFilter(el,menuId){document.querySelectorAll('.filter-chip').forEach(c=>{if(!c.classList.contains('keyword-chip'))c.classList.remove('active');});el.classList.add('active');currentMenuId=menuId;renderPosts();}
-function keywordFilter(el){keywordOnly=!keywordOnly;el.classList.toggle('active',keywordOnly);renderPosts();}
-async function loadPosts(){
-  if(isLoading)return;isLoading=true;setStatus('loading','스캔 중...');
-  document.getElementById('errorBanner').classList.remove('show');
-  try{
-    const resp=await fetch('/api/posts');
-    if(!resp.ok)throw new Error('HTTP '+resp.status);
-    allPosts=await resp.json();
-    const total=allPosts.length,kwCount=allPosts.filter(p=>(p.keywords||[]).length>0).length;
-    document.getElementById('statTotal').textContent=total;
-    document.getElementById('statStatus').textContent=total>0?'✅ 정상':'⚠️';
-    document.getElementById('statStatusSub').textContent=total>0?'키워드 '+kwCount+'건 포함':'게시글 없음';
-    const bc={'530':0,'14':0,'334':0,'3':0};
-    allPosts.forEach(p=>{if(bc[p.menu_id]!==undefined)bc[p.menu_id]++;});
-    Object.keys(bc).forEach(id=>{const el=document.getElementById('b'+id);if(el)el.textContent=bc[id]+'건';});
-    const badge=document.getElementById('pendingBadge'),kw=allPosts.filter(p=>(p.keywords||[]).length>0).length;
-    if(kw>0){badge.textContent=kw;badge.style.display='inline';}else badge.style.display='none';
-    const now=new Date().toLocaleTimeString('ko');
-    document.getElementById('lastScanText').textContent='갱신: '+now;
-    document.getElementById('sysLastScan').textContent=now;
-    document.getElementById('naverStatus').textContent=total>0?'연결됨 ✓':'쿠키 필요';
-    document.getElementById('naverStatus').className=total>0?'badge-ok':'badge-warn';
-    setStatus('ok','연결됨');renderPosts();renderTimeline();
-  }catch(e){
-    setStatus('off','오류');
-    const eb=document.getElementById('errorBanner');eb.textContent='연결 실패: '+e.message;eb.classList.add('show');
-    document.getElementById('postList').innerHTML='<div class="empty"><div class="ei">❌</div>서버 연결 실패<div style="font-size:11px;margin-top:8px;color:#9ca3af">Vercel 환경변수의 네이버 쿠키를 확인하세요</div></div>';
-    document.getElementById('listBadge').textContent='오류';
-  }finally{isLoading=false;}
+// ── ngrok 호환 fetch ──────────────────────────────────────────────
+function apiFetch(url, options = {}) {
+  options.headers = Object.assign({
+    'ngrok-skip-browser-warning': '1',
+    'Content-Type': 'application/json',
+  }, options.headers || {});
+  return fetch(url, options);
 }
-function setStatus(state,text){const dot=document.getElementById('statusDot');dot.className='status-dot'+(state==='loading'?' loading':state==='off'?' off':'');document.getElementById('statusText').textContent=text;}
-function loadAll(){loadPosts();}
-function renderPosts(){
-  let posts=[...allPosts];
-  if(currentMenuId)posts=posts.filter(p=>p.menu_id===currentMenuId);
-  if(keywordOnly)posts=posts.filter(p=>(p.keywords||[]).length>0);
-  document.getElementById('listBadge').textContent=posts.length+'건';
-  if(!posts.length){document.getElementById('postList').innerHTML=allPosts.length===0?'<div class="empty"><div class="ei">📭</div>게시글을 불러올 수 없습니다.</div>':'<div class="empty"><div class="ei">📭</div>해당 조건의 게시글이 없습니다.</div>';return;}
-  document.getElementById('postList').innerHTML=posts.map(p=>{
-    const hasKw=(p.keywords||[]).length>0;
-    const kws=(p.keywords||[]).slice(0,3).map(k=>'<span class="keyword-tag">'+escHtml(k)+'</span>').join('');
-    const noKw=!hasKw?'<span class="no-keyword-tag">키워드 없음</span>':'';
-    return '<div class="post-item '+(hasKw?'urgent':'unread')+'" onclick='openModal('+JSON.stringify(p)+')'>'+
-      '<div class="post-top"><div class="post-tags"><span class="board-tag tag-'+escHtml(p.board_name)+'">'+escHtml(p.board_name)+'</span>'+(hasKw?'<span style="background:#fef2f2;color:#ef4444;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px">🔑 키워드</span>':'')+'</div>'+
-      '<span class="time-badge">📄 '+escHtml(p.written_at||'')+'</span></div>'+
-      '<div class="post-title">'+escHtml(p.title)+'</div>'+
-      '<div class="post-bottom"><div class="keyword-tags">'+kws+noKw+'</div>'+
-      '<div class="post-actions"><button class="btn-open" onclick="event.stopPropagation();window.open(''+escHtml(p.url)+'','_blank')">원문 ↗</button></div></div></div>';
+
+// ── 상태 ─────────────────────────────────────────────────────────
+let allPosts = [];
+let currentMenuId = null;
+let currentStatus = null;
+let currentArticleId = null;
+
+const STATUS_MAP = {
+  pending:  { label:'🔥 미응대', cls:'s-pending' },
+  comment:  { label:'💬 댓글 완료', cls:'s-comment' },
+  proposal: { label:'📄 제안서 발송', cls:'s-proposal' },
+  done:     { label:'✅ 완료', cls:'s-done' },
+};
+
+const BOARD_MAP = { '530':'교육훈련','14':'교육기획','334':'강사추천','3':'자유게시판' };
+
+// ── 시간 포맷 ─────────────────────────────────────────────────────
+function relativeTime(isoStr) {
+  if (!isoStr) return '-';
+  const diff = Math.floor((Date.now() - new Date(isoStr)) / 1000);
+  if (diff < 60)  return { txt: `${diff}초 전`, cls:'time-fresh' };
+  if (diff < 600) return { txt: `${Math.floor(diff/60)}분 전`, cls:'time-fresh' };
+  if (diff < 3600)return { txt: `${Math.floor(diff/60)}분 전`, cls:'time-recent' };
+  if (diff < 86400)return{ txt: `${Math.floor(diff/3600)}시간 전`, cls:'time-old' };
+  return { txt: new Date(isoStr).toLocaleDateString('ko'), cls:'time-old' };
+}
+
+// ── 필터 ─────────────────────────────────────────────────────────
+function setFilter(menuId, status) {
+  currentMenuId = menuId;
+  currentStatus = status;
+  loadPosts();
+}
+
+function boardFilter(el, menuId) {
+  document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  currentMenuId = menuId;
+  currentStatus = null;
+  renderPosts();
+}
+
+function statusFilter(el, status) {
+  document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  currentStatus = status;
+  currentMenuId = null;
+  renderPosts();
+}
+
+// ── 데이터 로드 ───────────────────────────────────────────────────
+async function loadStats() {
+  try {
+    const r = await apiFetch('/api/stats');
+    const s = await r.json();
+    document.getElementById('statTotal').textContent   = s.total_today;
+    document.getElementById('statPending').textContent = s.pending_today;
+    document.getElementById('statRate').textContent    = s.response_rate + '%';
+    document.getElementById('statMonth').textContent   = `이번달 누적: ${s.total_month}건`;
+    document.getElementById('progRate').textContent    = s.response_rate + '%';
+    document.getElementById('progBar').style.width     = s.response_rate + '%';
+
+    const byStatus = s.by_status || {};
+    document.getElementById('rsPending').textContent  = byStatus.pending  || 0;
+    document.getElementById('rsComment').textContent  = byStatus.comment  || 0;
+    document.getElementById('rsProposal').textContent = byStatus.proposal || 0;
+
+    const byBoard = s.by_board || {};
+    document.getElementById('b530').textContent = (byBoard['교육훈련'] || 0) + '건';
+    document.getElementById('b14').textContent  = (byBoard['교육기획'] || 0) + '건';
+    document.getElementById('b334').textContent = (byBoard['강사추천'] || 0) + '건';
+    document.getElementById('b3').textContent   = (byBoard['자유게시판'] || 0) + '건';
+
+    const pending = s.pending_today || 0;
+    const badge = document.getElementById('pendingBadge');
+    badge.textContent = pending;
+    badge.style.display = pending > 0 ? 'inline' : 'none';
+  } catch(e) { console.error('stats error', e); }
+}
+
+async function loadPosts() {
+  try {
+    const r = await apiFetch('/api/posts?limit=200');
+    allPosts = await r.json();
+    renderPosts();
+    renderTimeline();
+  } catch(e) { console.error('posts error', e); }
+}
+
+async function loadSystem() {
+  try {
+    const r = await apiFetch('/api/system');
+    const s = await r.json();
+    document.getElementById('sysRunning').textContent = s.running ? '실행 중 ✓' : '중지됨';
+    if (s.last_scan) {
+      document.getElementById('lastScanText').textContent = '마지막 스캔: ' + s.last_scan.slice(11,16);
+    }
+    if (s.remaining_secs !== null) {
+      const m = Math.floor(s.remaining_secs / 60);
+      const sec = s.remaining_secs % 60;
+      document.getElementById('nextScanText').textContent =
+        `다음 스캔: ${m}분 ${sec}초 후`;
+    }
+  } catch(e) {
+    document.getElementById('statusDot').className = 'status-dot off';
+    document.getElementById('statusText').textContent = '서버 연결 안됨';
+  }
+}
+
+function loadAll() {
+  loadStats();
+  loadPosts();
+  loadSystem();
+}
+
+// ── 렌더링 ────────────────────────────────────────────────────────
+function renderPosts() {
+  let posts = [...allPosts];
+
+  if (currentMenuId) posts = posts.filter(p => p.menu_id === currentMenuId);
+  if (currentStatus) posts = posts.filter(p => p.status === currentStatus);
+
+  const sort = document.getElementById('sortSelect').value;
+  if (sort === 'urgent') {
+    const order = ['pending','comment','proposal','done'];
+    posts.sort((a,b) => order.indexOf(a.status) - order.indexOf(b.status));
+  }
+
+  document.getElementById('listBadge').textContent = `${posts.length}건`;
+
+  if (posts.length === 0) {
+    document.getElementById('postList').innerHTML =
+      '<div class="empty"><div class="ei">📭</div>탐지된 게시글이 없습니다.</div>';
+    return;
+  }
+
+  document.getElementById('postList').innerHTML = posts.map(p => {
+    const t = relativeTime(p.detected_at);
+    const isUrgent = p.status === 'pending' && t.cls === 'time-fresh';
+    const isUnread = p.status === 'pending';
+    const itemCls  = isUrgent ? 'urgent' : (isUnread ? 'unread' : '');
+    const boardCls = 'tag-' + (p.board_name || '');
+    const kws = (p.keywords||[]).slice(0,3).map(k=>`<span class="keyword-tag">${k}</span>`).join('');
+    const st  = STATUS_MAP[p.status] || STATUS_MAP.pending;
+    const preview = (p.content||'').replace(/\s+/g,' ').trim().slice(0,120);
+
+    return `<div class="post-item ${itemCls}" onclick="openModal('${p.article_id}')">
+      <div class="post-top">
+        <div class="post-tags">
+          <span class="board-tag ${boardCls}">${p.board_name}</span>
+          ${isUrgent ? '<span style="background:#fef2f2;color:#ef4444;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px">🔥 NEW</span>' : ''}
+        </div>
+        <span class="time-badge ${t.cls}">🕐 ${t.txt}</span>
+      </div>
+      <div class="post-title">${escHtml(p.title)}</div>
+      ${preview ? `<div class="post-preview">${escHtml(preview)}</div>` : ''}
+      <div class="post-bottom">
+        <div class="keyword-tags">${kws}</div>
+        <div class="post-actions">
+          <button class="status-btn ${st.cls}" onclick="event.stopPropagation();cycleStatus('${p.article_id}',this)">${st.label}</button>
+          <button class="btn-open" onclick="event.stopPropagation();window.open('${p.url}','_blank')">원문 ↗</button>
+        </div>
+      </div>
+    </div>`;
   }).join('');
 }
-function renderTimeline(){
-  const items=allPosts.filter(p=>(p.keywords||[]).length>0).slice(0,6);
-  const src=items.length>0?items:allPosts.slice(0,5);
-  if(!src.length){document.getElementById('recentTimeline').innerHTML='<div class="empty" style="padding:16px">탐지된 게시글이 없습니다.</div>';return;}
-  document.getElementById('recentTimeline').innerHTML=src.map(p=>'<div class="tl-item"><div class="tl-dot">'+(p.keywords?.length?'🔑':'📌')+'</div><div class="tl-content"><div class="tl-title">'+escHtml(p.title.slice(0,28))+(p.title.length>28?'…':'')+'</div><div class="tl-desc">'+escHtml(p.board_name)+(p.keywords?.length?' | '+p.keywords.slice(0,2).join(', '):'')+'</div></div></div>').join('');
-}
-function openModal(p){
-  document.getElementById('modalTitle').textContent=p.title;
-  document.getElementById('modalNaverLink').href=p.url||'#';
-  document.getElementById('modalMeta').innerHTML='<span class="meta-item"><strong>게시판</strong> '+escHtml(p.board_name)+'</span><span class="meta-item"><strong>작성자</strong> '+escHtml(p.author||'-')+'</span><span class="meta-item"><strong>작성일</strong> '+escHtml(p.written_at||'-')+'</span>'+((p.keywords||[]).length?'<span class="meta-item"><strong>🔑 키워드</strong> '+(p.keywords||[]).join(', ')+'</span>':'');
-  document.getElementById('modalBody').textContent=p.content||'본문은 네이버 원문에서 확인하세요.
 
-아래 버튼을 클릭하면 해당 게시글로 이동합니다.';
-  document.getElementById('modal').classList.add('open');
+function renderTimeline() {
+  const recent = allPosts.slice(0, 5);
+  if (recent.length === 0) {
+    document.getElementById('recentTimeline').innerHTML =
+      '<div class="empty" style="padding:16px">탐지된 게시글이 없습니다.</div>';
+    return;
+  }
+  document.getElementById('recentTimeline').innerHTML = recent.map(p => {
+    const t = relativeTime(p.detected_at);
+    return `<div class="tl-item">
+      <div class="tl-dot tl-new">📌</div>
+      <div class="tl-content">
+        <div class="tl-title">${escHtml(p.title.slice(0,30))}${p.title.length>30?'…':''}</div>
+        <div class="tl-desc">${p.board_name}</div>
+        <div class="tl-time">${t.txt}</div>
+      </div>
+    </div>`;
+  }).join('');
 }
-function closeModal(){document.getElementById('modal').classList.remove('open');}
+
+// ── 모달 ─────────────────────────────────────────────────────────
+async function openModal(articleId) {
+  currentArticleId = articleId;
+  try {
+    const r = await apiFetch(`/api/posts/${articleId}`);
+    const p = await r.json();
+    document.getElementById('modalTitle').textContent = p.title;
+    document.getElementById('modalNaverLink').href = p.url || '#';
+    document.getElementById('modalMeta').innerHTML = `
+      <span class="meta-item"><strong>게시판</strong> ${p.board_name}</span>
+      <span class="meta-item"><strong>작성자</strong> ${p.author||'-'}</span>
+      <span class="meta-item"><strong>탐지</strong> ${relativeTime(p.detected_at).txt}</span>
+      <span class="meta-item"><strong>키워드</strong> ${(p.keywords||[]).join(', ')}</span>`;
+    document.getElementById('modalBody').textContent = p.content || '본문을 가져올 수 없습니다.';
+    renderModalStatus(p.status);
+    document.getElementById('modal').classList.add('open');
+  } catch(e) { alert('게시글을 불러올 수 없습니다.'); }
+}
+
+function renderModalStatus(currentSt) {
+  const statuses = ['pending','comment','proposal','done'];
+  document.getElementById('modalStatusGroup').innerHTML = statuses.map(s => {
+    const info = STATUS_MAP[s];
+    const isActive = s === currentSt;
+    return `<button class="modal-status-btn ${info.cls} ${isActive?'active-status':''}"
+      onclick="setModalStatus('${s}')">${info.label}</button>`;
+  }).join('');
+}
+
+async function setModalStatus(status) {
+  if (!currentArticleId) return;
+  await apiFetch(`/api/posts/${currentArticleId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status }),
+    headers: { 'Content-Type': 'application/json' },
+  });
+  renderModalStatus(status);
+  // 목록 즉시 업데이트
+  const idx = allPosts.findIndex(p => p.article_id === currentArticleId);
+  if (idx >= 0) { allPosts[idx].status = status; renderPosts(); }
+  loadStats();
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+  currentArticleId = null;
+}
+
+// ── 목록에서 상태 순환 변경 ───────────────────────────────────────
+async function cycleStatus(articleId, btn) {
+  const order = ['pending','comment','proposal','done'];
+  const post = allPosts.find(p => p.article_id === articleId);
+  if (!post) return;
+  const next = order[(order.indexOf(post.status) + 1) % order.length];
+  await apiFetch(`/api/posts/${articleId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status: next }),
+    headers: { 'Content-Type': 'application/json' },
+  });
+  post.status = next;
+  const info = STATUS_MAP[next];
+  btn.textContent = info.label;
+  btn.className = `status-btn ${info.cls}`;
+  loadStats();
+}
+
+function escHtml(s) {
+  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── 초기화 + 자동 갱신 ───────────────────────────────────────────
 loadAll();
-setInterval(loadAll,5*60*1000);
+setInterval(loadAll, 30000);        // 30초마다 전체 갱신
+setInterval(loadSystem, 5000);      // 5초마다 시스템 상태 (카운트다운)
 </script>
 </body>
 </html>
