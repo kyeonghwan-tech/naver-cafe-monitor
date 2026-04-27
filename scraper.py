@@ -10,6 +10,7 @@ import logging
 
 import requests
 from bs4 import BeautifulSoup
+from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
 
 from config import CAFE_ID, BOARDS, IT_KEYWORDS, NAVER_COOKIES
 import db
@@ -124,27 +125,43 @@ def fetch_article_list(menu_id: str, page: int = 1, per_page: int = 20) -> list[
 # ── 게시글 본문 조회 ──────────────────────────────────────────────
 
 def fetch_article_content(article_id: str) -> str:
-    """게시글 본문 텍스트를 반환합니다."""
-    session = _make_session()
-
-    # iframe 내부 URL로 본문 접근 (iframe src 방식)
-    url = "https://cafe.naver.com/ArticleRead.nhn"
-    params = {
-        "clubid":    CAFE_ID,
-        "articleid": article_id,
-        "boardtype": "L",
-        "inframe":   "1",
-    }
+    """게시글 본문 텍스트를 반환합니다. (Playwright로 JS 렌더링 후 파싱)"""
+    url = (
+        f"https://cafe.naver.com/ArticleRead.nhn"
+        f"?clubid={CAFE_ID}&articleid={article_id}&boardtype=L&inframe=1"
+    )
     try:
-        resp = session.get(url, params=params, timeout=15)
-        soup = BeautifulSoup(resp.text, "html.parser")
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            context = browser.new_context(
+                user_agent=(
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/124.0.0.0 Safari/537.36"
+                )
+            )
+            # 네이버 로그인 쿠키 세팅
+            context.add_cookies([
+                {"name": "NID_AUT", "value": NAVER_COOKIES.get("NID_AUT", ""),
+                 "domain": ".naver.com", "path": "/"},
+                {"name": "NID_SES", "value": NAVER_COOKIES.get("NID_SES", ""),
+                 "domain": ".naver.com", "path": "/"},
+            ])
+            page = context.new_page()
+            page.goto(url, wait_until="networkidle", timeout=30000)
 
-        # web-pc noscript 메시지 감지 시 빈 문자열 반환
-        noscript = soup.find("noscript")
-        if noscript and "web-pc" in noscript.get_text():
-            logger.warning("fetch_article_content: Vue noscript 감지, 본문 없음 (%s)", article_id)
-            return ""
+            # 본문 영역이 렌더링될 때까지 대기
+            for selector in [".se-main-container", ".article_body", "#tbody", ".ContentRenderer"]:
+                try:
+                    page.wait_for_selector(selector, timeout=5000)
+                    break
+                except PlaywrightTimeoutError:
+                    continue
 
+            html = page.content()
+            browser.close()
+
+        soup = BeautifulSoup(html, "html.parser")
         content_area = (
             soup.select_one(".se-main-container")
             or soup.select_one(".article_body")
@@ -153,7 +170,6 @@ def fetch_article_content(article_id: str) -> str:
         )
         if content_area:
             text = content_area.get_text(separator="\n", strip=True)
-            # web-pc 메시지가 본문에 포함된 경우 필터링
             if "web-pc doesn't work properly" in text:
                 return ""
             return text
@@ -166,7 +182,7 @@ def fetch_article_content(article_id: str) -> str:
             return text
         return ""
     except Exception as e:
-        logger.error("fetch_article_content failed (%s): %s", article_id, e)
+        logger.error("fetch_article_content (playwright) failed (%s): %s", article_id, e)
         return ""
 
 
