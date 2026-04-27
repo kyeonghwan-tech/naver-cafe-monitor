@@ -128,6 +128,23 @@ def cron():
     })
 
 
+@app.route("/api/setup-playwright")
+def setup_playwright():
+    import subprocess, sys
+    results = {}
+    # git pull
+    r1 = subprocess.run(["git", "-C", _BASE_DIR, "pull"], capture_output=True, text=True)
+    results["git_pull"] = r1.stdout + r1.stderr
+    # pip install playwright
+    r2 = subprocess.run([sys.executable, "-m", "pip", "install", "playwright"], capture_output=True, text=True)
+    results["pip_install"] = r2.stdout[-500:] + r2.stderr[-500:]
+    # playwright install chromium
+    r3 = subprocess.run([sys.executable, "-m", "playwright", "install", "chromium"], capture_output=True, text=True)
+    results["playwright_install"] = r3.stdout[-500:] + r3.stderr[-500:]
+    results["ok"] = r2.returncode == 0 and r3.returncode == 0
+    return jsonify(results)
+
+
 def run(host="0.0.0.0", port=5000, debug=False):
     db.init_db()
     app.run(host=host, port=port, debug=debug, use_reloader=False)
