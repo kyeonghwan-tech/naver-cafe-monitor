@@ -50,13 +50,8 @@ def _make_session() -> requests.Session:
 # ── 게시판 목록 조회 ──────────────────────────────────────────────
 
 def fetch_article_list(menu_id: str, page: int = 1, per_page: int = 20) -> list[dict]:
-    """
-    Naver Cafe 내부 API로 게시글 목록을 가져옵니다.
-    JSON 응답 실패 시 HTML 파싱으로 fallback.
-    """
     session = _make_session()
 
-    # ── 1차 시도: 내부 JSON API ──────────────────────────────────
     json_url = "https://apis.naver.com/cafe-web/cafe2/ArticleListV2.json"
     params = {
         "search.clubid":  CAFE_ID,
@@ -85,12 +80,10 @@ def fetch_article_list(menu_id: str, page: int = 1, per_page: int = 20) -> list[
                     "menu_id": menu_id,
                 })
             if articles:
-                logger.debug("JSON API: %d articles from menu %s", len(articles), menu_id)
                 return articles
     except Exception as e:
         logger.warning("JSON API failed (menu %s): %s", menu_id, e)
 
-    # ── 2차 시도: HTML 파싱 ──────────────────────────────────────
     html_url = "https://cafe.naver.com/ArticleList.nhn"
     params_html = {
         "search.clubid":    CAFE_ID,
@@ -122,7 +115,6 @@ def fetch_article_list(menu_id: str, page: int = 1, per_page: int = 20) -> list[
                 "date":    date_td.get_text(strip=True) if date_td else "",
                 "menu_id": menu_id,
             })
-        logger.debug("HTML fallback: %d articles from menu %s", len(articles), menu_id)
         return articles
     except Exception as e:
         logger.error("HTML fallback failed (menu %s): %s", menu_id, e)
@@ -135,18 +127,24 @@ def fetch_article_content(article_id: str) -> str:
     """게시글 본문 텍스트를 반환합니다."""
     session = _make_session()
 
-    # iframe 내부 URL로 본문 접근
+    # iframe 내부 URL로 본문 접근 (iframe src 방식)
     url = "https://cafe.naver.com/ArticleRead.nhn"
     params = {
         "clubid":    CAFE_ID,
         "articleid": article_id,
         "boardtype": "L",
+        "inframe":   "1",
     }
     try:
         resp = session.get(url, params=params, timeout=15)
         soup = BeautifulSoup(resp.text, "html.parser")
 
-        # 본문 영역 선택 (다양한 클래스명 대응)
+        # web-pc noscript 메시지 감지 시 빈 문자열 반환
+        noscript = soup.find("noscript")
+        if noscript and "web-pc" in noscript.get_text():
+            logger.warning("fetch_article_content: Vue noscript 감지, 본문 없음 (%s)", article_id)
+            return ""
+
         content_area = (
             soup.select_one(".se-main-container")
             or soup.select_one(".article_body")
@@ -154,11 +152,19 @@ def fetch_article_content(article_id: str) -> str:
             or soup.select_one(".ContentRenderer")
         )
         if content_area:
-            return content_area.get_text(separator="\n", strip=True)
+            text = content_area.get_text(separator="\n", strip=True)
+            # web-pc 메시지가 본문에 포함된 경우 필터링
+            if "web-pc doesn't work properly" in text:
+                return ""
+            return text
 
-        # fallback: body 전체
         body = soup.find("body")
-        return body.get_text(separator="\n", strip=True) if body else ""
+        if body:
+            text = body.get_text(separator="\n", strip=True)
+            if "web-pc doesn't work properly" in text:
+                return ""
+            return text
+        return ""
     except Exception as e:
         logger.error("fetch_article_content failed (%s): %s", article_id, e)
         return ""
@@ -167,7 +173,6 @@ def fetch_article_content(article_id: str) -> str:
 # ── 키워드 매칭 ───────────────────────────────────────────────────
 
 def contains_it_keyword(text: str) -> list[str]:
-    """텍스트에 포함된 IT 키워드 목록을 반환합니다."""
     text_lower = text.lower()
     matched = [kw for kw in IT_KEYWORDS if kw.lower() in text_lower]
     return matched
@@ -176,10 +181,6 @@ def contains_it_keyword(text: str) -> list[str]:
 # ── 전체 모니터링 실행 ────────────────────────────────────────────
 
 def scan_all_boards() -> list[dict]:
-    """
-    모든 게시판을 스캔하여 IT 키워드가 포함된 신규 게시글 목록을 반환합니다.
-    각 항목: {id, title, author, date, menu_id, board_name, keywords, content, url}
-    """
     init_db()
     results = []
 
@@ -197,13 +198,9 @@ def scan_all_boards() -> list[dict]:
             if is_seen(article_id):
                 continue
 
-            # 제목에서 1차 키워드 체크 (빠른 필터)
             matched_in_title = contains_it_keyword(title)
-
-            # 본문까지 확인
             content = fetch_article_content(article_id)
             matched_in_content = contains_it_keyword(content)
-
             all_matched = list(dict.fromkeys(matched_in_title + matched_in_content))
 
             if all_matched:
@@ -223,10 +220,8 @@ def scan_all_boards() -> list[dict]:
                     "url":        article_url,
                 })
 
-            # 신규 게시글은 확인 여부와 무관하게 seen 처리
             mark_seen(article_id, menu_id, title)
 
-            # IT 키워드 매칭 게시글은 DB에 저장
             if all_matched:
                 db.save_post({
                     **article,
