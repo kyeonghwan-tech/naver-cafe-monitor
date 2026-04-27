@@ -126,10 +126,8 @@ def fetch_article_list(menu_id: str, page: int = 1, per_page: int = 20) -> list[
 
 def fetch_article_content(article_id: str) -> str:
     """게시글 본문 텍스트를 반환합니다. (Playwright로 JS 렌더링 후 파싱)"""
-    url = (
-        f"https://cafe.naver.com/ArticleRead.nhn"
-        f"?clubid={CAFE_ID}&articleid={article_id}&boardtype=L&inframe=1"
-    )
+    # 네이버 카페 게시글 직접 URL (iframe 없이)
+    url = f"https://cafe.naver.com/ca-fe/cafes/{CAFE_ID}/articles/{article_id}"
     try:
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=True)
@@ -151,9 +149,9 @@ def fetch_article_content(article_id: str) -> str:
             page.goto(url, wait_until="networkidle", timeout=30000)
 
             # 본문 영역이 렌더링될 때까지 대기
-            for selector in [".se-main-container", ".article_body", "#tbody", ".ContentRenderer"]:
+            for selector in [".se-main-container", ".article_body", "#tbody", ".ContentRenderer", ".se-module-text"]:
                 try:
-                    page.wait_for_selector(selector, timeout=5000)
+                    page.wait_for_selector(selector, timeout=8000)
                     break
                 except PlaywrightTimeoutError:
                     continue
