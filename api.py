@@ -112,6 +112,15 @@ def setup_playwright():
     return jsonify(results)
 
 
+@app.route("/api/fix-content")
+def fix_content():
+    import subprocess, sys, os
+    base = os.path.dirname(os.path.abspath(__file__))
+    script = os.path.join(base, "fix_content.py")
+    r = subprocess.run([sys.executable, script], capture_output=True, text=True, cwd=base)
+    return jsonify({"output": r.stdout[-2000:], "error": r.stderr[-500:], "ok": r.returncode == 0})
+
+
 def run(host="0.0.0.0", port=5000, debug=False):
     db.init_db()
     app.run(host=host, port=port, debug=debug, use_reloader=False)
