@@ -126,8 +126,11 @@ def fetch_article_list(menu_id: str, page: int = 1, per_page: int = 20) -> list[
 
 def fetch_article_content(article_id: str) -> str:
     """게시글 본문 텍스트를 반환합니다. (Playwright로 JS 렌더링 후 파싱)"""
-    # 네이버 카페 게시글 직접 URL (iframe 없이)
-    url = f"https://cafe.naver.com/ca-fe/cafes/{CAFE_ID}/articles/{article_id}"
+    # 네이버 카페 게시글 iframe 본문 URL
+    url = (
+        f"https://cafe.naver.com/ArticleRead.nhn"
+        f"?clubid={CAFE_ID}&articleid={article_id}&boardtype=L"
+    )
     try:
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=True)
@@ -148,36 +151,26 @@ def fetch_article_content(article_id: str) -> str:
             page = context.new_page()
             page.goto(url, wait_until="networkidle", timeout=30000)
 
-            # 본문 영역이 렌더링될 때까지 대기
-            for selector in [".se-main-container", ".article_body", "#tbody", ".ContentRenderer", ".se-module-text"]:
-                try:
-                    page.wait_for_selector(selector, timeout=8000)
+            # iframe 안으로 진입
+            content_text = ""
+            for frame in page.frames:
+                for selector in [".se-main-container", ".article_body", "#tbody", ".ContentRenderer"]:
+                    try:
+                        el = frame.query_selector(selector)
+                        if el:
+                            text = el.inner_text()
+                            if text and "web-pc" not in text and len(text) > 20:
+                                content_text = text
+                                break
+                    except Exception:
+                        continue
+                if content_text:
                     break
-                except PlaywrightTimeoutError:
-                    continue
 
-            html = page.content()
             browser.close()
 
-        soup = BeautifulSoup(html, "html.parser")
-        content_area = (
-            soup.select_one(".se-main-container")
-            or soup.select_one(".article_body")
-            or soup.select_one("#tbody")
-            or soup.select_one(".ContentRenderer")
-        )
-        if content_area:
-            text = content_area.get_text(separator="\n", strip=True)
-            if "web-pc doesn't work properly" in text:
-                return ""
-            return text
-
-        body = soup.find("body")
-        if body:
-            text = body.get_text(separator="\n", strip=True)
-            if "web-pc doesn't work properly" in text:
-                return ""
-            return text
+        if content_text:
+            return content_text
         return ""
     except Exception as e:
         logger.error("fetch_article_content (playwright) failed (%s): %s", article_id, e)
