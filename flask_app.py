@@ -28,11 +28,15 @@ def ensure_db():
 
 @app.route("/")
 def index():
-    response = send_from_directory(_WEB_DIR, "index.html")
-    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
-    response.headers["Pragma"] = "no-cache"
-    response.headers["Expires"] = "0"
-    return response
+    html_path = os.path.join(_WEB_DIR, "index.html")
+    with open(html_path, "r", encoding="utf-8") as f:
+        content = f.read()
+    from flask import Response
+    return Response(content, mimetype="text/html", headers={
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Pragma": "no-cache",
+        "Expires": "0",
+    })
 
 
 # ── API ──────────────────────────────────────────────────────────
